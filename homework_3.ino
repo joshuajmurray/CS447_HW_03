@@ -4,14 +4,17 @@
 #define SENSOR_LEFT 0
 #define SENSOR_RIGHT 1
 //#define SENSOR_CENTER 2
+#define LOOP_TIME 50
 #define POT 3
 #define SERVO 9
+
 #define HUNDO 10
-#define TEN 50
+#define TEN 35
 #define SEC 1000
+
 #define LOWER 0
 #define UPPER 180
-#define MIN_TO_MOVE 2
+#define MIN_TO_MOVE 3
 //#define GAIN 0.1
 #define DEBUG true
 //#define DEBUG false
@@ -33,33 +36,16 @@ void setup() {
   myservo.write(90);
   Serial.begin(115200);
   Serial.println(F("Begin"));
+  MsTimer2::set(LOOP_TIME, readWrite);
+  MsTimer2::start();
 }
 
-void loop() {
-  if(onehzTimer < millis() && DEBUG) {//this whole loop is debug code
-    Serial.println(F("================================="));
-    Serial.print(F("Servo angle"));Serial.println(myservo.read());
-    Serial.print(F("Left Sensor: "));Serial.println(leftSensor);
-    Serial.print(F("Right Sensor: "));Serial.println(rightSensor);
-    Serial.print(F("Error: "));Serial.println(error);
-    Serial.print(F("New val: "));Serial.println(newVal);
-    Serial.print(F("Trim pot: "));Serial.println(analogRead(POT));
-    Serial.print(F("Gain: "));Serial.println(gain);
-    Serial.print(F("Change: "));Serial.println(change);
-    if(maxed){
-      Serial.println(F("MAXED, no move"));
-    }else {
-      Serial.println(F("MOVING"));
-    }    
-    onehzTimer += SEC;
-  }  
-
-  if(tenhzTimer < millis()) {//sample sensors at 10hz
+void readWrite() {
     leftSensor = analogRead(SENSOR_LEFT);
     rightSensor = analogRead(SENSOR_RIGHT);
-    gain = (map(analogRead(POT),0,1023,0,100)*.001);
+    gain = constrain((map(analogRead(POT),0,1023,0,100)*.001),0.02,0.10);
     angle = myservo.read();
-    error = rightSensor - leftSensor;//calculate error
+    error = leftSensor - rightSensor;//calculate error
     change = error*gain;
     newVal = constrain((angle + change),LOWER,UPPER);//constrain the new value so it doesn't try to move past it's limits
     if(abs(change) > MIN_TO_MOVE) {// && angle < UPPER && angle > LOWER){//if the servro is at the limit of it's travel or the request is below the threhold don't move
@@ -68,12 +54,25 @@ void loop() {
     } else {
       maxed = true;
     }
-    tenhzTimer += TEN;
-  }
+    tenhzTimer += TEN;  
+}
 
-  if(hundredhzTimer < millis()) {
-
-    hundredhzTimer += HUNDO;
-  }
-
+void loop() {
+//  if(onehzTimer < millis() && DEBUG) {//this whole loop is debug code
+//    Serial.println(F("================================="));
+//    Serial.print(F("Servo angle"));Serial.println(myservo.read());
+//    Serial.print(F("Left Sensor: "));Serial.println(leftSensor);
+//    Serial.print(F("Right Sensor: "));Serial.println(rightSensor);
+//    Serial.print(F("Error: "));Serial.println(error);
+//    Serial.print(F("New val: "));Serial.println(newVal);
+//    Serial.print(F("Trim pot: "));Serial.println(analogRead(POT));
+//    Serial.print(F("Gain: "));Serial.println(gain);
+//    Serial.print(F("Change: "));Serial.println(change);
+//    if(maxed){
+//      Serial.println(F("MAXED, no move"));
+//    }else {
+//      Serial.println(F("MOVING"));
+//    }    
+//    onehzTimer += SEC;
+//  }  
 }
